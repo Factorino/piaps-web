@@ -1,73 +1,101 @@
-# React + TypeScript + Vite
+# MedPayroll — Фронтенд системы начисления зарплаты клиники
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Технологический стек
 
-Currently, two official plugins are available:
+- **React 18** + **TypeScript** — ядро приложения
+- **Vite 6** — сборка и dev-сервер
+- **TanStack Query v5** — серверный стейт, кеширование, мутации
+- **Zustand** — клиентский стейт (авторизация, тема)
+- **React Router v6** — маршрутизация
+- **React Hook Form** — формы
+- **Tailwind CSS 3** — стилизация, тёмная тема, адаптив
+- **Recharts** — графики на дашборде
+- **Axios** — HTTP-клиент с перехватчиками
+- **Lucide React** — иконки
+- **React Hot Toast** — уведомления
+- **date-fns** — работа с датами
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Архитектура (Feature-Based)
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── shared/                 # Переиспользуемые модули
+│   ├── api/client.ts       # Axios клиент с interceptors, refresh token
+│   ├── types/index.ts      # Все типы, enum'ы, DTO
+│   ├── hooks/index.ts      # useDebounce, useSearchParams
+│   ├── ui/                 # Компоненты: DataTable, Modal, Pagination, SearchBar, FilterPanel, ...
+│   └── utils/index.ts      # Форматирование денег, дат, имён
+├── features/               # Фичи по сущностям
+│   ├── auth/               # Логин, регистрация, профиль
+│   ├── departments/        # CRUD отделений
+│   ├── positions/          # CRUD должностей
+│   ├── employees/          # CRUD сотрудников
+│   ├── payroll-items/      # CRUD статей начислений/удержаний
+│   ├── payroll-sheets/     # Расчётные листы + записи + подтверждение/отмена
+│   ├── reports/            # Отчёты (по сотруднику, отделению, сводный) + PDF/Excel
+│   ├── users/              # Управление пользователями (роли, пароли, привязка)
+│   └── dashboard/          # Главная страница с дашбордами
+├── layouts/                # MainLayout с sidebar
+├── stores/                 # Zustand: auth, theme
+├── App.tsx                 # Маршрутизация
+└── main.tsx                # Точка входа
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Возможности
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### CRUD для всех сущностей
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Таблицы с пагинацией, сортировкой, фильтрацией
+- Поиск с debounce (400ms)
+- Создание, редактирование, удаление через модальные окна
+
+### Расчётные листы
+
+- Создание листа для сотрудника на период
+- Добавление/удаление записей (начисления и удержания)
+- Автоматический расчёт суммы (для процентных статей)
+- Подтверждение и отмена листа
+- Отображение итогов: начислено, удержано, к выплате
+
+### Отчёты
+
+- По сотруднику, по отделению, сводный
+- Три формата: UI (таблицы), PDF (скачивание), Excel (скачивание)
+- Фильтрация по периоду и статусу
+
+### Ролевая модель
+
+- **Сотрудник** — видит дашборд, свой отчёт, профиль
+- **Бухгалтер** — все CRUD, расчётные листы, все отчёты
+- **Администратор** — всё + управление пользователями, отделениями, должностями
+
+### UI/UX
+
+- Светлая и тёмная тема (переключатель в sidebar)
+- Адаптивный дизайн (mobile, tablet, desktop)
+- Сворачиваемый sidebar
+- Уведомления об успехе/ошибках
+- Обработка ошибок API (4xx, 5xx) с отображением сообщений
+- Автоматический refresh JWT-токена
+
+## Запуск
+
+```bash
+npm install
+npm run dev
 ```
+
+Приложение проксирует API-запросы `/api/*` на `http://localhost:8000`.
+Для изменения URL бекенда создайте `.env`:
+
+```
+VITE_API_URL=http://your-backend:8000
+```
+
+## Сборка
+
+```bash
+npm run build
+```
+
+Результат в директории `dist/`.

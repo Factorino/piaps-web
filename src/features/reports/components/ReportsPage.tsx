@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { FileText, Download, BarChart3 } from "lucide-react";
 import { reportsApi } from "@/features/reports/api";
@@ -16,15 +16,24 @@ import {
   ReportFormat,
   PayrollItemType,
   PayrollItemTypeLabel,
+  UserRole,
 } from "@/shared/types";
 import { formatMoney, formatPeriod } from "@/shared/utils";
+import { useAuthStore } from "@/stores/auth";
 import toast from "react-hot-toast";
 
 type ReportType = "employee" | "department" | "summary";
 
 export function ReportsPage() {
-  const [reportType, setReportType] = useState<ReportType>("summary");
-  const [employeeId, setEmployeeId] = useState("");
+  const user = useAuthStore((s) => s.user);
+  const isEmployee = user?.role === UserRole.EMPLOYEE;
+
+  const [reportType, setReportType] = useState<ReportType>(
+    isEmployee ? "employee" : "summary",
+  );
+  const [employeeId, setEmployeeId] = useState(
+    isEmployee && user?.employee_id ? user.employee_id : "",
+  );
   const [departmentId, setDepartmentId] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -35,6 +44,16 @@ export function ReportsPage() {
     | PayrollSummaryReportData
     | null
   >(null);
+
+  // Если роль сменилась (маловероятно, но на всякий случай)
+  useEffect(() => {
+    if (isEmployee) {
+      setReportType("employee");
+      if (user?.employee_id) {
+        setEmployeeId(user.employee_id);
+      }
+    }
+  }, [isEmployee, user?.employee_id]);
 
   const { data: employees } = useQuery({
     queryKey: ["employees", "all"],
@@ -129,6 +148,7 @@ export function ReportsPage() {
               { value: "department", label: "По отделению" },
               { value: "employee", label: "По сотруднику" },
             ]}
+            disabled={isEmployee}
           />
 
           {reportType === "employee" && (
@@ -143,6 +163,7 @@ export function ReportsPage() {
                 })) ?? []
               }
               placeholder="Выберите сотрудника"
+              disabled={isEmployee && !!user?.employee_id}
             />
           )}
           {reportType === "department" && (
